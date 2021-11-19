@@ -110,6 +110,7 @@ namespace BDArmory.Control
                     break;
             }
             rounds = new Dictionary<int, Dictionary<int, VesselSpawner.SpawnConfig>>();
+            //BEGIN CHANGES TO TOURNAMENT STYLE CASE 2
             switch (tournamentStyle)
             {
                 case 0: // RNG
@@ -182,6 +183,45 @@ namespace BDArmory.Control
                             rounds.Add(roundIndex, heatList.Select((heat, index) => new KeyValuePair<int, VesselSpawner.SpawnConfig>(index, heat)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value));
                         }
                         break;
+                    }
+                case 2: //CAP - Combat Air Patrol - Created by Zipelsquerp
+                    {
+                        //required inputs:
+                        //Vessels in 'AutoSpawn' folder 
+                        //spawning location - given radius of 50km about 'interesting spawn locations'
+                        //maximum number of current vessels - ignore all vessels on team b in routine
+                        //intended outputs:
+                        //randomly spawn vessels continuously within a radius from priority target until max lives per vessel is satisfied
+                        //activate AI pilot, guard mode
+                        //challenges:
+                        //
+                        message $="Generating a CAP mission with {totalEnemies} total enemies with {totalEnemiesAtOnce+totalFriendliesAtOnce} total ships in flight";
+                        Debug.Log($"[BDArmory.BDATournament]: " + message);
+                        
+                        //get geo coords of friendly priority target, update every
+                        TARGET = [BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x, BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y, BDArmorySettings.VESSEL_SPAWN_ALTITUDE;]
+                                                
+                        var heatList = new List<VesselSpawner.SpawnConfig>();
+                        foreach (var combination in Combinations(vesselCount, vesselsPerHeat))
+                        {
+                            heatList.Add(new VesselSpawner.SpawnConfig(
+                                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.x,
+                                BDArmorySettings.VESSEL_SPAWN_GEOCOORDS.y,
+                                BDArmorySettings.VESSEL_SPAWN_ALTITUDE,
+                                BDArmorySettings.VESSEL_SPAWN_DISTANCE,
+                                BDArmorySettings.VESSEL_SPAWN_DISTANCE_TOGGLE,
+                                BDArmorySettings.VESSEL_SPAWN_EASE_IN_SPEED,
+                                false, // do NOT kill everything first.
+                                BDArmorySettings.VESSEL_SPAWN_REASSIGN_TEAMS, // Assign teams.
+                                0, // Number of teams.
+                                null, // List of team numbers.
+                                null, // List of List of teams' vessels.
+                                null, // No folder, we're going to specify the craft files.
+                                combination.Select(i => craftFiles[i]).ToList() // Add a copy of the craft files list.
+                            ));
+                        }
+                        
+                        
                     }
                 default:
                     throw new ArgumentOutOfRangeException("tournamentStyle", "Invalid tournament style value - not implemented.");
